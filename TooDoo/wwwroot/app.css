@@ -6,6 +6,36 @@ a, .btn-link {
     color: #006bb7;
 }
 
+.priority-1 {
+    background-color: #f3c7c7;
+    color: #331212;
+}
+
+.priority-2 {
+    background-color: #f3dbc7;
+    color: #332112;
+}
+
+.priority-3 {
+    background-color: #f3eac7;
+    color: #332c12;
+}
+
+.priority-4 {
+    background-color: #eaf3c7;
+    color: #2c3312;
+}
+
+.priority-5 {
+    background-color: #c7f3e7;
+    color: #12332a;
+}
+
+.priority-6 {
+    background-color: #c7d4f3;
+    color: #121c33;
+}
+
 .btn-primary {
     color: #fff;
     background-color: #1b6ec2;
