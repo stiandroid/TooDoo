@@ -1,6 +1,8 @@
 ﻿@page "/todolist/{id}"
 @inject ITodoService todoService
 
+<PageTitle>@AppConfig.SiteTitle@(todoList != null ? $" - {todoList.Title}" : "")</PageTitle>
+
 @if (todoList != null)
 {
     @if (editingTitle)
@@ -11,8 +13,8 @@
                 Ok
             </button>
             <button type="button" 
-                    @onclick="CancelEditingTitle"
-                    class="btn btn-primary">
+            @onclick="CancelEditingTitle"
+            class="btn btn-primary">
                 Avbryt
             </button>
         </EditForm>
@@ -35,16 +37,20 @@
                 {
                     <li>
                         <EditForm Model="editingItem" OnValidSubmit="SaveChangesToItem">
+                            <span class="pe-3">@item.Priority.GetDescription()</span>
                             <InputText @bind-Value="item.Title" @onchange="ValidateItem" />
-                            <InputCheckbox @bind-Value="item.IsDone" />
+                            <span class="px-3">
+                                Fullført? 
+                                <InputCheckbox @bind-Value="item.IsDone" />
+                            </span>
                             <button type="submit" 
-                                    disabled="@(!editingItemIsValid)"
-                                    class="btn btn-success">
+                            disabled="@(!editingItemIsValid)"
+                            class="btn btn-success">
                                 Ok
                             </button>
                             <button type="button" 
-                                    @onclick="CancelEditingItem"
-                                    class="btn btn-primary">
+                            @onclick="CancelEditingItem"
+                            class="btn btn-primary">
                                 Avbryt
                             </button>
                         </EditForm>
@@ -55,11 +61,17 @@
                     <li @onclick="(() => EditItem(item.Id.ToString()))">
                         @if (item.IsDone)
                         {
-                            <s class="text-secondary">@item.Title</s>
+                            <s class="text-secondary">
+                                <span class="pe-3">@item.Priority.GetDescription()</span>
+                                @item.Title
+                            </s>
                         }
                         else
                         {
-                            <strong>@item.Title</strong>
+                            <strong>
+                                <span class="pe-3">@item.Priority.GetDescription()</span>
+                                @item.Title
+                            </strong>
                         }
                     </li>
                 }
@@ -88,7 +100,7 @@ else
     private bool editingTitle;
     private string tempString = string.Empty;
     private TodoItem? editingItem;
-    private bool editingItemIsValid = false;
+    private bool editingItemIsValid = true;
     private string errorMessage = string.Empty;
 
     [Parameter]
@@ -110,6 +122,10 @@ else
 
     private void EditTitle()
     {
+        if (editingItem != null)
+        {
+            CancelEditingItem();
+        }
         editingTitle = true;
         tempString = todoList!.Title;
         editingItem = null;
@@ -136,7 +152,13 @@ else
     }
 
     private void AddItem()
-    { 
+    {
+        if (editingTitle)
+        {
+            editingTitle = false;
+            todoList!.Title = tempString;
+            tempString = string.Empty;
+        }
         if (todoList != null && editingItem == null)
         {
             editingItem = new TodoItem { 
