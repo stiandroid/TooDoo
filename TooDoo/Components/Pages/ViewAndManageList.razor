@@ -10,12 +10,10 @@
         <EditForm Model="todoList" OnValidSubmit="SaveChangesToTitle">
             <InputText @bind-Value="todoList.Title" />
             <button type="submit" class="btn btn-success">
-                Lagre
+                <i class="bi bi-floppy-fill"></i>
             </button>
-            <button type="button" 
-            @onclick="CancelEditingTitle"
-            class="btn btn-primary">
-                Avbryt
+            <button type="button" @onclick="CancelEditingTitle" class="btn btn-primary">
+                <i class="bi bi-chevron-left"></i>
             </button>
         </EditForm>
     }
@@ -25,62 +23,67 @@
     }
 
     <p>
-        <button @onclick="AddItem" class="btn btn-lg btn-success">Legg til oppgave</button>
+        <a href="/" class="btn btn-lg btn-primary">
+            <i class="bi bi-chevron-left"></i>
+            Tilbake
+        </a>
+        <button @onclick="AddItem" class="btn btn-lg btn-success">
+            <i class="bi bi-plus"></i>
+            Legg til oppgave
+        </button>
     </p>
 
     @if (todoList.TodoItems.Count > 0)
     {
-        <ul>
-            @foreach (var item in todoList.TodoItems)
+        <div class="container border border-dark">
+        @foreach (var item in todoList.TodoItems)
+        {
+            @if (editingItem != null && item.Id == editingItem.Id)
             {
-                if (editingItem != null && item.Id == editingItem.Id)
-                {
-                    <li>
-                        <EditForm Model="editingItem" OnValidSubmit="SaveChangesToItem">
-                            <span class="pe-3">@item.Priority.GetDescription()</span>
-                            <InputText @bind-Value="item.Title" @onchange="ValidateItem" />
-                            <span class="px-3">
-                                Fullført? 
-                                <InputCheckbox @bind-Value="item.IsDone" />
-                            </span>
-                            <button type="submit" 
-                            disabled="@(!editingItemIsValid)"
-                            class="btn btn-success">
-                                Lagre
+                <EditForm Model="editingItem" OnValidSubmit="SaveChangesToItem">
+                    <div class="row py-1 priority-@((int)item.Priority) @(item.IsDone?" text-decoration-line-through":"")">
+                        <div class="col">
+                            <InputText @bind-Value="editingItem.Title" @onchange="ValidateItem" />
+                        </div>
+                        <div class="col">
+                            <InputSelect @bind-Value="editingItem.Priority" class="form-select">
+                                @foreach (PriorityEnum priValue in Enum.GetValues(typeof(PriorityEnum)))
+                                {
+                                    <option value="@priValue" class="priority-@((int)priValue)">
+                                        @priValue.GetDescription()
+                                    </option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col">
+                            Fullført?
+                            <InputCheckbox @bind-Value="editingItem.IsDone" />
+                        </div>
+                        <div class="col">
+                            <button type="button" @onclick="CancelEditingItem" class="btn btn-primary">
+                                <i class="bi bi-chevron-left"></i>
                             </button>
-                            <button type="button" 
-                            @onclick="CancelEditingItem"
-                            class="btn btn-primary">
-                                Avbryt
+                            <button type="submit" disabled="@(!editingItemIsValid)" class="btn btn-success">
+                                <i class="bi bi-floppy-fill"></i>
                             </button>
-                        </EditForm>
-                    </li>
-                }
-                else
-                {
-                    <li @onclick="(() => EditItem(item.Id.ToString()))">
-                        @if (item.IsDone)
-                        {
-                            <s class="text-secondary">
-                                <span class="pe-3">@item.Priority.GetDescription()</span>
-                                @item.Title
-                            </s>
-                        }
-                        else
-                        {
-                            <strong>
-                                <span class="pe-3">@item.Priority.GetDescription()</span>
-                                @item.Title
-                            </strong>
-                        }
-                    </li>
-                }
+                        </div>
+                    </div> @* row *@
+                </EditForm>
             }
-        </ul>
+            else
+            {
+                <div class="row py-1 priority-@((int)item.Priority) @(item.IsDone?" text-decoration-line-through":"")">
+                    <div class="col-12" @onclick="(() => EditItem(item.Id.ToString()))">
+                        @item.Title
+                    </div>
+                </div> // row
+            }
+        }
+        </div> // container
     }
     else
     { 
-        <p>Tom liste.</p>
+        <p>Listen inneholder ingen gjøremål.</p>
     }
 
     @if (!string.IsNullOrEmpty(errorMessage))
@@ -189,10 +192,8 @@ else
             return;
         }
 
-        if (editingItem.Title != tempString)
-        { 
-            await todoService.AddOrUpdateTodoItemAsync(editingItem!);
-        }
+        await todoService.AddOrUpdateTodoItemAsync(editingItem!);
+
         editingItem = null;
     }
 
