@@ -1,0 +1,53 @@
+﻿@page "/"
+@inject ITodoService todoService
+@inject NavigationManager nav
+
+<PageTitle>@AppConfig.SiteTitle</PageTitle>
+
+<h3>Lister</h3>
+
+<button @onclick="NewList">
+    <i class="bi bi-plus"></i>
+    Ny liste
+</button>
+
+@if (TodoLister != null)
+{
+    <ul>
+        @foreach (var liste in TodoLister)
+        {
+            <li @onclick="(() => NavigateToList(liste.Id))">@liste.Title (@liste.TodoItems.Count)</li>
+        }
+    </ul>
+}
+else
+{
+    <p>Leser data ...</p>
+}
+
+@code{
+    private List<Models.TodoList> TodoLister = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        TodoLister = await todoService.GetTodoListsAsync();
+    }
+
+    private async Task NewList()
+    {
+        var newList = new TodoList
+        { 
+            Id = Guid.NewGuid(),
+            Title = await todoService.GenerateListTitleAsync()
+        };
+        if (await todoService.AddTodoListAsync(newList))
+        {
+            nav.NavigateTo($"todolist/{newList.Id}");
+        }
+    }
+
+    private void NavigateToList(Guid id)
+    { 
+        nav.NavigateTo($"todolist/{id}");
+    }
+}

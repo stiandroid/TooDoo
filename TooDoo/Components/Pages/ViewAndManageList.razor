@@ -1,0 +1,187 @@
+﻿@page "/todolist/{id}"
+@inject ITodoService todoService
+
+@if (todoList != null)
+{
+    @if (editingTitle)
+    { 
+        <EditForm Model="todoList" OnValidSubmit="SaveChangesToTitle">
+            <InputText @bind-Value="todoList.Title" />
+            <button type="submit" class="btn btn-success">
+                Ok
+            </button>
+            <button type="button" 
+                    @onclick="CancelEditingTitle"
+                    class="btn btn-primary">
+                Avbryt
+            </button>
+        </EditForm>
+    }
+    else
+    { 
+        <h3 @onclick="EditTitle">@todoList.Title</h3>
+    }
+
+    <p>
+        <button @onclick="AddItem" class="btn btn-lg btn-success">Legg til oppgave</button>
+    </p>
+
+    @if (todoList.TodoItems.Count > 0)
+    {
+        <ul>
+            @foreach (var item in todoList.TodoItems)
+            {
+                if (editingItem != null && item.Id == editingItem.Id)
+                {
+                    <li>
+                        <EditForm Model="editingItem" OnValidSubmit="SaveChangesToItem">
+                            <InputText @bind-Value="item.Title" @onchange="ValidateItem" />
+                            <InputCheckbox @bind-Value="item.IsDone" />
+                            <button type="submit" 
+                                    disabled="@(!editingItemIsValid)"
+                                    class="btn btn-success">
+                                Ok
+                            </button>
+                            <button type="button" 
+                                    @onclick="CancelEditingItem"
+                                    class="btn btn-primary">
+                                Avbryt
+                            </button>
+                        </EditForm>
+                    </li>
+                }
+                else
+                {
+                    <li @onclick="(() => EditItem(item.Id.ToString()))">
+                        @if (item.IsDone)
+                        {
+                            <s class="text-secondary">@item.Title</s>
+                        }
+                        else
+                        {
+                            <strong>@item.Title</strong>
+                        }
+                    </li>
+                }
+            }
+        </ul>
+    }
+    else
+    { 
+        <p>Tom liste.</p>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger rounded p-3 my-3">
+            @errorMessage
+        </div>
+    }
+}
+else
+{ 
+    <p>Leser data ...</p>
+}
+
+@code {
+    private TodoList? todoList;
+    private bool editingTitle;
+    private string tempString = string.Empty;
+    private TodoItem? editingItem;
+    private bool editingItemIsValid = false;
+    private string errorMessage = string.Empty;
+
+    [Parameter]
+    public string? Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(Id))
+        {
+            todoList = await todoService.GetTodoListByIdAsync(Id);
+        }
+        editingTitle = false;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        errorMessage = string.Empty;
+    }
+
+    private void EditTitle()
+    {
+        editingTitle = true;
+        tempString = todoList!.Title;
+        editingItem = null;
+    }
+
+    private void CancelEditingTitle()
+    {
+        editingTitle = false;
+        todoList!.Title = tempString;
+    }
+
+    private async Task SaveChangesToTitle()
+    {
+        if (string.IsNullOrEmpty(todoList!.Title))
+        {
+            errorMessage = "Tittel kan ikke være tom.";
+            return;
+        }
+
+        if (await todoService.UpdateListTitleAsync(todoList!))
+        {
+            editingTitle = false;
+        }
+    }
+
+    private void AddItem()
+    { 
+        if (todoList != null && editingItem == null)
+        {
+            editingItem = new TodoItem { 
+                Id = Guid.Empty, // Midlertidig verdi for å skille mellom lagrede og ikke lagrede items
+                TodoListId = todoList.Id
+            };
+            todoList.TodoItems.Insert(0, editingItem);
+        }
+    }
+
+    private async Task EditItem(string id)
+    {
+        editingTitle = false;
+        editingItem = await todoService.GetTodoItemByIdAsync(id);
+        tempString = editingItem!.Title;
+        ValidateItem();
+    }
+
+    private void CancelEditingItem()
+    {
+        editingItem!.Title = tempString;
+        editingItem = null;
+        if (todoList!.TodoItems[0].Id == Guid.Empty)
+        {
+            todoList!.TodoItems.RemoveAt(0);
+        }
+    }
+
+    private async Task SaveChangesToItem()
+    {
+        if (string.IsNullOrEmpty(editingItem!.Title))
+        {
+            errorMessage = "Oppgaven kan ikke være tom.";
+            return;
+        }
+
+        if (editingItem.Title != tempString)
+        { 
+            await todoService.AddOrUpdateTodoItemAsync(editingItem!);
+        }
+        editingItem = null;
+    }
+
+    private void ValidateItem()
+    {
+        editingItemIsValid = !string.IsNullOrEmpty(editingItem?.Title);
+    }
+}
