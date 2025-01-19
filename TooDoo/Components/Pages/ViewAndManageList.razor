@@ -10,7 +10,7 @@
         <EditForm Model="todoList" OnValidSubmit="SaveChangesToTitle">
             <InputText @bind-Value="todoList.Title" />
             <button type="submit" class="btn btn-success">
-                Ok
+                Lagre
             </button>
             <button type="button" 
             @onclick="CancelEditingTitle"
@@ -46,7 +46,7 @@
                             <button type="submit" 
                             disabled="@(!editingItemIsValid)"
                             class="btn btn-success">
-                                Ok
+                                Lagre
                             </button>
                             <button type="button" 
                             @onclick="CancelEditingItem"
@@ -122,10 +122,7 @@ else
 
     private void EditTitle()
     {
-        if (editingItem != null)
-        {
-            CancelEditingItem();
-        }
+        CheckIfEditingItem();
         editingTitle = true;
         tempString = todoList!.Title;
         editingItem = null;
@@ -153,12 +150,8 @@ else
 
     private void AddItem()
     {
-        if (editingTitle)
-        {
-            editingTitle = false;
-            todoList!.Title = tempString;
-            tempString = string.Empty;
-        }
+        CheckIfEditingTitle();
+        CheckIfEditingItem();
         if (todoList != null && editingItem == null)
         {
             editingItem = new TodoItem { 
@@ -171,7 +164,8 @@ else
 
     private async Task EditItem(string id)
     {
-        editingTitle = false;
+        CheckIfEditingTitle();
+        CheckIfEditingItem();
         editingItem = await todoService.GetTodoItemByIdAsync(id);
         tempString = editingItem!.Title;
         ValidateItem();
@@ -205,5 +199,23 @@ else
     private void ValidateItem()
     {
         editingItemIsValid = !string.IsNullOrEmpty(editingItem?.Title);
+    }
+
+    private void CheckIfEditingTitle()
+    { 
+        if (editingTitle)
+        {
+            editingTitle = false;
+            todoList!.Title = tempString;
+            tempString = string.Empty;
+        }
+    }
+
+    private void CheckIfEditingItem()
+    { 
+        if (editingItem != null)
+        {
+            CancelEditingItem();
+        }
     }
 }
